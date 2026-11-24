@@ -1,0 +1,41 @@
+name: Derle
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodu cek
+        uses: actions/checkout@v4
+
+      - name: 32-bit kutuphaneleri kur
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y libc6-i386
+
+      - name: Pawn derleyicisini indir
+        run: |
+          wget -q https://github.com/pawn-lang/compiler/releases/download/v3.10.10/pawnc-3.10.10-linux.tar.gz
+          tar -xzf pawnc-3.10.10-linux.tar.gz
+          git clone --depth 1 https://github.com/openmultiplayer/omp-stdlib.git stdlib
+
+      - name: Tum .pwn dosyalarini derle
+        run: |
+          export LD_LIBRARY_PATH="$PWD/pawnc-3.10.10-linux/lib"
+          mkdir -p cikti
+          find . -name "*.pwn" -not -path "./stdlib/*" | while read f; do
+            ad=$(basename "$f" .pwn)
+            echo "=== Derleniyor: $f ==="
+            ./pawnc-3.10.10-linux/bin/pawncc "$f" -i"./stdlib" -i"$(dirname "$f")" -o"cikti/$ad.amx" -d3 '-;+' '-(+' || { echo "HATA: $f"; exit 1; }
+          done
+          ls -la cikti
+
+      - name: AMX dosyalarini yukle
+        uses: actions/upload-artifact@v4
+        with:
+          name: amx-dosyalari
+          path: cikti/*.amx
