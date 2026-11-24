@@ -22,16 +22,16 @@ jobs:
           wget -q https://github.com/pawn-lang/compiler/releases/download/v3.10.10/pawnc-3.10.10-linux.tar.gz
           tar -xzf pawnc-3.10.10-linux.tar.gz
           git clone --depth 1 https://github.com/pawn-lang/samp-stdlib.git stdlib
-          ls pawnc-3.10.10-linux/include
+          git clone --depth 1 https://github.com/pawn-lang/pawn-stdlib.git pawnstd
 
       - name: Tum .pwn dosyalarini derle
         run: |
           export LD_LIBRARY_PATH="$PWD/pawnc-3.10.10-linux/lib"
           mkdir -p cikti
-          find . -name "*.pwn" -not -path "./stdlib/*" | while read f; do
+          find . -name "*.pwn" -not -path "./stdlib/*" -not -path "./pawnstd/*" | while read f; do
             ad=$(basename "$f" .pwn)
             echo "=== Derleniyor: $f ==="
-            ./pawnc-3.10.10-linux/bin/pawncc "$f" -i"./stdlib" -i"$PWD/pawnc-3.10.10-linux/include" -i"$(dirname "$f")" -o"cikti/$ad.amx" -d3 '-;+' '-(+' || { echo "HATA: $f"; exit 1; }
+            ./pawnc-3.10.10-linux/bin/pawncc "$f" -i"./stdlib" -i"./pawnstd" -i"$(dirname "$f")" -o"cikti/$ad.amx" -d3 '-;+' '-(+' || { echo "HATA: $f"; exit 1; }
           done
           ls -la cikti
 
